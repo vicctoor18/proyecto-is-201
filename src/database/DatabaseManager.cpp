@@ -13,7 +13,7 @@ DatabaseManager &DatabaseManager::instance() {
 DatabaseManager::DatabaseManager() {
   db = QSqlDatabase::addDatabase("QSQLITE");
 
-  // Use "data" folder in the application directory
+  // Base de datos en "build/data"
   QString dataDir = QCoreApplication::applicationDirPath() + "/data";
   QDir dir(dataDir);
   if (!dir.exists()) {
@@ -46,7 +46,7 @@ void DatabaseManager::initDB() {
 
   QSqlQuery query;
 
-  // Users table
+  // Tabla de usuarios
   query.exec("CREATE TABLE IF NOT EXISTS users ("
              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
              "username TEXT UNIQUE, "
@@ -56,7 +56,7 @@ void DatabaseManager::initDB() {
              "degree TEXT, "
              "nationality TEXT)");
 
-  // Tutor-Student relationship
+  // Relación tutor-alumno
   query.exec("CREATE TABLE IF NOT EXISTS tutor_student ("
              "tutor_id INTEGER, "
              "student_id INTEGER, "
@@ -64,7 +64,7 @@ void DatabaseManager::initDB() {
              "FOREIGN KEY(tutor_id) REFERENCES users(id), "
              "FOREIGN KEY(student_id) REFERENCES users(id))");
 
-  // Messages
+  // Mensajes
   query.exec("CREATE TABLE IF NOT EXISTS messages ("
              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
              "sender_id INTEGER, "
@@ -74,7 +74,7 @@ void DatabaseManager::initDB() {
              "FOREIGN KEY(sender_id) REFERENCES users(id), "
              "FOREIGN KEY(receiver_id) REFERENCES users(id))");
 
-  // Seed data if empty
+  // Información predeterminada si la base de datos esta vacia
   query.exec("SELECT count(*) FROM users");
   if (query.next() && query.value(0).toInt() == 0) {
     // Tutors
