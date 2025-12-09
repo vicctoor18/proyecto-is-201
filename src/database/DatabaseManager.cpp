@@ -1,9 +1,9 @@
 #include "DatabaseManager.h"
-#include <QCoreApplication>
-#include <QDateTime>
-#include <QDebug>
-#include <QDir>
-#include <QStandardPaths>
+#include <QCoreApplication> // Para acceder a la ruta de la aplicacion
+#include <QDateTime> // Para obtener la fecha y hora actual
+#include <QDebug> // Para imprimir mensajes en la consola
+#include <QDir> // Para manejar directorios
+#include <QStandardPaths> // Para obtener la ruta de la aplicacion
 
 DatabaseManager &DatabaseManager::instance() {
   static DatabaseManager instance;
@@ -77,14 +77,14 @@ void DatabaseManager::initDB() {
   // Información predeterminada si la base de datos esta vacia
   query.exec("SELECT count(*) FROM users");
   if (query.next() && query.value(0).toInt() == 0) {
-    // Tutors
+    // Tutores
     registerUser("alberto", "1234", "tutor", "Alberto", "Informatica",
                  "Espana");
     registerUser("roberto", "1234", "tutor", "Roberto", "Mecanica", "Cuba");
     registerUser("adela", "1234", "tutor", "Adela", "Electrica", "Espana");
     registerUser("manuela", "1234", "tutor", "Manuela", "Forestal", "Colombia");
 
-    // Students
+    // Estudiantes
     registerUser("javier", "1234", "alumno", "Javier", "Informatica", "Cuba");
     registerUser("julian", "1234", "alumno", "Julian", "Informatica", "Espana");
     registerUser("david", "1234", "alumno", "David", "Informatica", "Espana");
@@ -94,7 +94,7 @@ void DatabaseManager::initDB() {
     registerUser("antonio", "1234", "alumno", "Antonio", "Electrica", "Espana");
   }
 
-  // Assign tutors to all students (idempotent due to immutability check)
+  // Asignación de tutor
   query.exec("SELECT id, degree, nationality FROM users WHERE role = 'alumno'");
   while (query.next()) {
     assignTutor(query.value(0).toInt(), query.value(1).toString(),
@@ -102,11 +102,9 @@ void DatabaseManager::initDB() {
   }
 }
 
-bool DatabaseManager::login(const QString &username, const QString &password,
-                            QString &role, int &userId) {
+bool DatabaseManager::login(const QString &username, const QString &password, QString &role, int &userId) {
   QSqlQuery query;
-  query.prepare("SELECT id, role FROM users WHERE username = :username AND "
-                "password = :password");
+  query.prepare("SELECT id, role FROM users WHERE username = :username AND password = :password");
   query.bindValue(":username", username);
   query.bindValue(":password", password);
 
@@ -118,13 +116,9 @@ bool DatabaseManager::login(const QString &username, const QString &password,
   return false;
 }
 
-bool DatabaseManager::registerUser(const QString &username,
-                                   const QString &password, const QString &role,
-                                   const QString &name, const QString &degree,
-                                   const QString &nationality) {
+bool DatabaseManager::registerUser(const QString &username, const QString &password, const QString &role, const QString &name, const QString &degree, const QString &nationality) {
   QSqlQuery query;
-  query.prepare("INSERT INTO users (username, password, role, name, degree, "
-                "nationality) VALUES (:u, :p, :r, :n, :d, :nat)");
+  query.prepare("INSERT INTO users (username, password, role, name, degree, nationality) VALUES (:u, :p, :r, :n, :d, :nat)");
   query.bindValue(":u", username);
   query.bindValue(":p", password);
   query.bindValue(":r", role);
@@ -149,23 +143,22 @@ int DatabaseManager::getAssignedTutor(int studentId) {
   return -1;
 }
 
-bool DatabaseManager::assignTutor(int studentId, const QString &degree,
-                                  const QString &nationality) {
-  // Immutability check: if already assigned, do nothing
+bool DatabaseManager::assignTutor(int studentId, const QString &degree, const QString &nationality) {
+  // Tutor es inmutable, no se puede cambiar.+
   if (getAssignedTutor(studentId) != -1) {
     return false;
   }
 
   struct TutorCandidate {
     int id;
-    int matchScore; // 2 for both, 1 for single
+    int matchScore; // 2 puntos si cumple ambas, 1 si cumple 1
     int studentCount;
   };
 
   std::vector<TutorCandidate> candidates;
 
   QSqlQuery query;
-  // Find tutors matching Degree OR Nationality
+  // Buscar tutores que cumplan una o dos condiciones
   query.prepare("SELECT id, degree, nationality FROM users WHERE role = "
                 "'tutor' AND (degree = :d OR nationality = :n)");
   query.bindValue(":d", degree);
@@ -174,6 +167,19 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
   if (!query.exec()) {
     qDebug() << "Error searching for tutors:" << query.lastError().text();
     return false;
+  }
+
+  // Si no hay coincidencias, buscar TODOS los tutores
+  if (!query.next()) {
+    query.prepare(
+        "SELECT id, degree, nationality FROM users WHERE role = 'tutor'");
+    if (!query.exec()) {
+      qDebug() << "Error searching for all tutors:" << query.lastError().text();
+      return false;
+    }
+  } else {
+    // Si hubo resultados, volver al principio
+    query.seek(-1);
   }
 
   while (query.next()) {
@@ -187,7 +193,7 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
     if (tNationality == nationality)
       score++;
 
-    // Get student count for this tutor
+    // Conseguir numero de alumnos de este tutor.
     QSqlQuery countQuery;
     countQuery.prepare(
         "SELECT COUNT(*) FROM tutor_student WHERE tutor_id = :tid");
@@ -201,12 +207,11 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
   }
 
   if (candidates.empty()) {
-    qDebug() << "No suitable tutor found for degree:" << degree
-             << "nationality:" << nationality;
+    qDebug() << "No tutors found in the system.";
     return false;
   }
 
-  // Selection Logic
+  // Algoritmo de seleccion de tutor
   TutorCandidate *best = nullptr;
 
   for (auto &candidate : candidates) {
@@ -215,34 +220,29 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
       continue;
     }
 
-    // Check overload condition: A is overloaded vs B if A.count > 2 * B.count +
-    // 1
-    bool bestIsOverloaded =
-        best->studentCount > (2 * candidate.studentCount + 1);
-    bool candidateIsOverloaded =
-        candidate.studentCount > (2 * best->studentCount + 1);
+    // Comprueba cantidad de alumnos. Si el tutor A tiene la mitad o más de alumnos que el B, se elegirá el B para no sobrecargar a A.
+    bool bestIsOverloaded = best->studentCount > (2 * candidate.studentCount + 1);
+    bool candidateIsOverloaded =candidate.studentCount > (2 * best->studentCount + 1);
 
     if (candidate.matchScore > best->matchScore) {
-      // Candidate has better score (e.g. 2 vs 1).
-      // Pick Candidate UNLESS they are overloaded compared to Best.
+      // Candidato tiene más puntos que el mejor actual.
       if (!candidateIsOverloaded) {
         best = &candidate;
       }
     } else if (candidate.matchScore == best->matchScore) {
-      // Same score, pick the one with fewer students
+      // Mismos puntos, se elige el que menos estudiantes a cargo tenga.
       if (candidate.studentCount < best->studentCount) {
         best = &candidate;
       }
     } else {
-      // Candidate has lower score (e.g. 1 vs 2).
-      // Normally keep Best.
-      // But if Best is overloaded vs Candidate, pick Candidate.
+      // Candidato tiene menos puntos
       if (bestIsOverloaded) {
         best = &candidate;
       }
     }
   }
 
+  // Añadir enlace tutor-alumno.
   if (best) {
     query.prepare(
         "INSERT INTO tutor_student (tutor_id, student_id) VALUES (:tid, :sid)");
@@ -257,19 +257,16 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
   return false;
 }
 
-bool DatabaseManager::sendMessage(int senderId, int receiverId,
-                                  const QString &content) {
+bool DatabaseManager::sendMessage(int senderId, int receiverId, const QString &content) {
   QSqlQuery query;
-  query.prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES "
-                "(:sid, :rid, :c)");
+  query.prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES (:sid, :rid, :c)");
   query.bindValue(":sid", senderId);
   query.bindValue(":rid", receiverId);
   query.bindValue(":c", content);
   return query.exec();
 }
 
-std::vector<DatabaseManager::Message>
-DatabaseManager::getMessages(int userId1, int userId2) {
+std::vector<DatabaseManager::Message> DatabaseManager::getMessages(int userId1, int userId2) {
   std::vector<Message> messages;
   QSqlQuery query;
   query.prepare("SELECT id, sender_id, content, timestamp FROM messages "
@@ -281,9 +278,7 @@ DatabaseManager::getMessages(int userId1, int userId2) {
 
   if (query.exec()) {
     while (query.next()) {
-      messages.push_back({query.value(0).toInt(), query.value(1).toInt(),
-                          query.value(2).toString(),
-                          query.value(3).toString()});
+      messages.push_back({query.value(0).toInt(), query.value(1).toInt(), query.value(2).toString(), query.value(3).toString()});
     }
   }
   return messages;
@@ -291,12 +286,10 @@ DatabaseManager::getMessages(int userId1, int userId2) {
 
 DatabaseManager::UserInfo DatabaseManager::getUserInfo(int userId) {
   QSqlQuery query;
-  query.prepare(
-      "SELECT id, name, degree, nationality FROM users WHERE id = :id");
+  query.prepare("SELECT id, name, degree, nationality FROM users WHERE id = :id");
   query.bindValue(":id", userId);
   if (query.exec() && query.next()) {
-    return {query.value(0).toInt(), query.value(1).toString(),
-            query.value(2).toString(), query.value(3).toString()};
+    return {query.value(0).toInt(), query.value(1).toString(), query.value(2).toString(), query.value(3).toString()};
   }
   return {-1, "", "", ""};
 }
@@ -312,9 +305,7 @@ DatabaseManager::getStudentsForTutor(int tutorId) {
 
   if (query.exec()) {
     while (query.next()) {
-      students.push_back({query.value(0).toInt(), query.value(1).toString(),
-                          query.value(2).toString(),
-                          query.value(3).toString()});
+      students.push_back({query.value(0).toInt(), query.value(1).toString(), query.value(2).toString(), query.value(3).toString()});
     }
   }
   return students;
