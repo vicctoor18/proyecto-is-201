@@ -1,12 +1,12 @@
 #ifndef STUDENTWINDOW_H
 #define STUDENTWINDOW_H
 
-#include <QLabel>      // Widget para mostrar texto estático
-#include <QLineEdit>   // Widget para campos de entrada de texto de una línea
-#include <QPushButton> // Widget para botones clicables
-#include <QTextEdit> // Widget de texto multilínea (para mostrar el chat completo)
-#include <QVBoxLayout> // Gestor de diseño que organiza los elementos verticalmente
-#include <QWidget>     // Clase base de todos los objetos de la interfaz gráfica
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QTextEdit>
+#include <QVBoxLayout>
+#include <QWidget>
 
 class StudentWindow : public QWidget {
   Q_OBJECT

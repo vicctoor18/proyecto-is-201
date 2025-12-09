@@ -1,26 +1,26 @@
 #ifndef REGISTERWINDOW_H
-#define REGISTERWINDOW_H
+#define REGISTERWINDOW_H //Hace que si se ha leido este archivo una vez, no se lea de nuevo
 
-#include <QComboBox> // Widget de lista desplegable (para seleccionar el Rol: Alumno/Tutor)
-#include <QLabel> // Widget para mostrar texto estático (etiquetas como "Usuario:")
-#include <QLineEdit> // Widget para campos de entrada de texto de una línea (usuario y contraseña)
-#include <QPushButton> // Widget para botones clicables ("Registrarse")
-#include <QVBoxLayout> // Gestor de diseño que organiza los elementos verticalmente
-#include <QWidget>     // Clase base de todos los objetos de la interfaz gráfica
+#include <QComboBox>
+#include <QLabel> //Incluye las librerías que hacen falta para montar la página de registro
+#include <QLineEdit>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 
 class RegisterWindow : public QWidget {
-  Q_OBJECT
+  Q_OBJECT //Hace que la clase sea interactiva (que cuando se pulsa el botón, se registre el usuario)
 
 public:
   explicit RegisterWindow(QWidget *parent = nullptr);
 
 private slots:
-  void onRegisterClicked();
+  void onRegisterClicked(); //Los slots en Qt reaccionan a algo. Hacen que la función esté conectada a una señal. Solo se llama desde dentro
 
 private:
   QLineEdit *usernameEdit;
   QLineEdit *passwordEdit;
-  QLineEdit *nameEdit;
+  QLineEdit *nameEdit;         //Lista de variables
   QLineEdit *degreeEdit;
   QLineEdit *nationalityEdit;
   QComboBox *roleCombo;
