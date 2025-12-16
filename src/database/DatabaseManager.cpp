@@ -74,6 +74,30 @@ void DatabaseManager::initDB() {
              "FOREIGN KEY(sender_id) REFERENCES users(id), "
              "FOREIGN KEY(receiver_id) REFERENCES users(id))");
 
+  // Alertas
+  query.exec("CREATE TABLE IF NOT EXISTS alerts ("
+             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+             "sender_id INTEGER, "
+             "receiver_id INTEGER, "
+             "content TEXT, "
+             "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
+             "is_read INTEGER DEFAULT 0, "
+             "FOREIGN KEY(sender_id) REFERENCES users(id), "
+             "FOREIGN KEY(receiver_id) REFERENCES users(id))");
+
+  // Tutorias
+  query.exec("CREATE TABLE IF NOT EXISTS appointments ("
+             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+             "student_id INTEGER, "
+             "tutor_id INTEGER, "
+             "date TEXT, "
+             "time TEXT, "
+             "reason TEXT, "
+             "status TEXT, "
+             "tutor_notes TEXT, "
+             "FOREIGN KEY(student_id) REFERENCES users(id), "
+             "FOREIGN KEY(tutor_id) REFERENCES users(id))");
+
   // Información predeterminada si la base de datos esta vacia
   query.exec("SELECT count(*) FROM users");
   if (query.next() && query.value(0).toInt() == 0) {
@@ -306,6 +330,120 @@ DatabaseManager::getMessages(int userId1, int userId2) {
     }
   }
   return messages;
+}
+
+bool DatabaseManager::sendAlert(int senderId, int receiverId,
+                                const QString &content) {
+  QSqlQuery query;
+  query.prepare("INSERT INTO alerts (sender_id, receiver_id, content) VALUES "
+                "(:sid, :rid, :c)");
+  query.bindValue(":sid", senderId);
+  query.bindValue(":rid", receiverId);
+  query.bindValue(":c", content);
+  return query.exec();
+}
+
+std::vector<DatabaseManager::Alert> DatabaseManager::getAlerts(
+    int studentId) { // Devuelve las alertas de un estudiante
+  std::vector<Alert> alerts;
+  QSqlQuery query;
+  // Hacemos JOIN con users para obtener el nombre del remitente (tutor)
+  query.prepare(
+      "SELECT a.id, a.sender_id, u.name, a.content, a.timestamp, a.is_read "
+      "FROM alerts a "
+      "JOIN users u ON a.sender_id = u.id "
+      "WHERE a.receiver_id = :rid "
+      "ORDER BY a.timestamp DESC");
+  query.bindValue(":rid", studentId);
+
+  if (query.exec()) {
+    while (query.next()) {
+      alerts.push_back({query.value(0).toInt(), query.value(1).toInt(),
+                        query.value(2).toString(), query.value(3).toString(),
+                        query.value(4).toString(), query.value(5).toBool()});
+    }
+  }
+  return alerts;
+}
+
+bool DatabaseManager::markAlertAsRead(
+    int alertId) { // Marca alerta como "LEIDA"
+  QSqlQuery query;
+  query.prepare("UPDATE alerts SET is_read = 1 WHERE id = :id");
+  query.bindValue(":id", alertId);
+  return query.exec();
+}
+
+bool DatabaseManager::requestAppointment(
+    int studentId, int tutorId, const QString &date, const QString &time,
+    const QString &reason) { // Crea una tutoría
+  QSqlQuery query;
+  query.prepare("INSERT INTO appointments (student_id, tutor_id, date, time, "
+                "reason, status) "
+                "VALUES (:sid, :tid, :d, :t, :r, 'REQUESTED')");
+  query.bindValue(":sid", studentId);
+  query.bindValue(":tid", tutorId);
+  query.bindValue(":d", date);
+  query.bindValue(":t", time);
+  query.bindValue(":r", reason);
+  return query.exec();
+}
+
+std::vector<DatabaseManager::Appointment> DatabaseManager::getAppointments(
+    int userId, bool isTutor) { // Devuelve el listado de tutorias
+  std::vector<Appointment> appointments;
+  QSqlQuery query;
+
+  QString sql = "SELECT a.id, a.student_id, a.tutor_id, u.name, a.date, "
+                "a.time, a.reason, a.status, a.tutor_notes "
+                "FROM appointments a ";
+
+  if (isTutor) {
+    sql += "JOIN users u ON a.student_id = u.id WHERE a.tutor_id = :uid";
+  } else {
+    sql += "JOIN users u ON a.student_id = u.id WHERE a.student_id = :uid";
+  }
+  sql += " ORDER BY a.date ASC, a.time ASC";
+
+  query.prepare(sql);
+  query.bindValue(":uid", userId);
+
+  if (query.exec()) {
+    while (query.next()) {
+      appointments.push_back(
+          {query.value(0).toInt(), query.value(1).toInt(),
+           query.value(2).toInt(), query.value(3).toString(),
+           query.value(4).toString(), query.value(5).toString(),
+           query.value(6).toString(), query.value(7).toString(),
+           query.value(8).toString()});
+    }
+  }
+  return appointments;
+}
+
+bool DatabaseManager::updateAppointment(
+    int appointmentId, const QString &newDate, const QString &newTime,
+    const QString &status,
+    const QString &notes) { // Cambiar fecha y hora de la tutoria
+  QSqlQuery query;
+  query.prepare("UPDATE appointments SET date = :d, time = :t, status = :s, "
+                "tutor_notes = :n WHERE id = :id");
+  query.bindValue(":d", newDate);
+  query.bindValue(":t", newTime);
+  query.bindValue(":s", status);
+  query.bindValue(":n", notes);
+  query.bindValue(":id", appointmentId);
+  return query.exec();
+}
+
+bool DatabaseManager::updateAppointmentStatus(
+    int appointmentId,
+    const QString &status) { // Cambiar estado de la tutoria
+  QSqlQuery query;
+  query.prepare("UPDATE appointments SET status = :s WHERE id = :id");
+  query.bindValue(":s", status);
+  query.bindValue(":id", appointmentId);
+  return query.exec();
 }
 
 DatabaseManager::UserInfo DatabaseManager::getUserInfo(int userId) {

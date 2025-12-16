@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
-  // Initialize database
+  // Inicializar base de datos
   DatabaseManager::instance().initDB();
 
   LoginWindow loginWindow;

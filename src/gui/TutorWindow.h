@@ -2,14 +2,21 @@
 #define TUTORWINDOW_H
 
 #include "../database/DatabaseManager.h"
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
-#include <QListWidget>
-#include <QPushButton>
-#include <QTextEdit>
-#include <QVBoxLayout>
-#include <QWidget>
+#include <QCheckBox>    // Casilla de verificacion
+#include <QDateEdit>    // Widget para editar fechas
+#include <QFormLayout>  // Layout para formularios
+#include <QGroupBox>    // Caja de grupo con titulo
+#include <QHBoxLayout>  // Layout horizontal
+#include <QLabel>       // Etiqueta de texto
+#include <QLineEdit>    // Campo de texto de una linea
+#include <QListWidget>  // Lista de elementos seleccionables
+#include <QPushButton>  // Boton pulsable
+#include <QTabWidget>   // Widget para organizar contenido en pestañas
+#include <QTableWidget> // Tabla para mostrar datos
+#include <QTextEdit>    // Campo de texto multilineas
+#include <QTimeEdit>    // Widget para editar horas
+#include <QVBoxLayout>  // Layout vertical
+#include <QWidget>      // Clase base para todos los widgets
 #include <vector>
 
 class TutorWindow : public QWidget {
@@ -24,10 +31,25 @@ private slots:
   void refreshChat();
   void onLogoutClicked();
 
+  // Slots para alertas
+  void onSendAlert();
+  void onSelectAllStudents(int state);
+
+  // Slots para tutorias
+  void onAppointmentSelected(int row, int column);
+  void onAcceptAppointment();
+  void onModifyAppointment();
+  void onChangeStatus(const QString &newStatus);
+  void refreshAppointments();
+
 private:
   int tutorId;
   int currentStudentId;
 
+  QTabWidget *tabWidget;
+
+  // Chat Tab Widgets
+  QWidget *chatTab;
   QListWidget *studentList;
   QTextEdit *chatDisplay;
   QLineEdit *messageInput;
@@ -35,10 +57,38 @@ private:
   QPushButton *logoutButton;
   QLabel *chatLabel;
 
+  // Alerts Tab Widgets
+  QWidget *alertsTab;
+  QListWidget *alertStudentList; // Lista con checkboxes
+  QCheckBox *selectAllCheckBox;
+  QTextEdit *alertMessageInput;
+  QPushButton *sendAlertButton;
+
+  // Appointments Tab Widgets
+  QWidget *appointmentsTab;
+  QTableWidget *appointmentsTable;
+  QGroupBox *appointmentDetailsGroup;
+  QLineEdit *appStudentName;
+  QDateEdit *appDateEdit;
+  QTimeEdit *appTimeEdit;
+  QLineEdit *appReason;
+  QTextEdit *appTutorNotes;
+  QPushButton *appAcceptButton;
+  QPushButton *appModifyButton;
+  QPushButton *appStartButton;
+  QPushButton *appFinishButton;
+  int currentAppointmentId;
+
   std::vector<DatabaseManager::UserInfo> students;
 
+  void setupChatTab();
+  void setupAlertsTab();
+  void setupAppointmentsTab();
   void loadStudents();
   void loadChat();
+  void loadAlertStudents(); // Cargar estudiantes en la lista de alertas
+  void loadAppointments();
+  void updateAppointmentButtons(const QString &status);
 };
 
 #endif // TUTORWINDOW_H

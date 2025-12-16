@@ -1,7 +1,8 @@
 #ifndef REGISTERWINDOW_H
-#define REGISTERWINDOW_H //Hace que si se ha leido este archivo una vez, no se lea de nuevo
+#define REGISTERWINDOW_H // Hace que si se ha leido este archivo una vez, no se
+                         // lea de nuevo
 
-#include <QComboBox>
+#include <QComboBox> // Crear listas desplegables
 #include <QLabel> //Incluye las librerías que hacen falta para montar la página de registro
 #include <QLineEdit>
 #include <QPushButton>
@@ -9,18 +10,18 @@
 #include <QWidget>
 
 class RegisterWindow : public QWidget {
-  Q_OBJECT //Hace que la clase sea interactiva (que cuando se pulsa el botón, se registre el usuario)
+Q_OBJECT // Hace que la clase sea interactiva (que cuando se pulsa el botón, se
+         // registre el usuario)
 
-public:
-  explicit RegisterWindow(QWidget *parent = nullptr);
+    public : explicit RegisterWindow(QWidget *parent = nullptr);
 
-private slots:
-  void onRegisterClicked(); //Los slots en Qt reaccionan a algo. Hacen que la función esté conectada a una señal. Solo se llama desde dentro
+private slots: // Slots son funciones que se ejecutan cuando ocurre un evento
+  void onRegisterClicked();
 
 private:
   QLineEdit *usernameEdit;
   QLineEdit *passwordEdit;
-  QLineEdit *nameEdit;         //Lista de variables
+  QLineEdit *nameEdit;
   QLineEdit *degreeEdit;
   QLineEdit *nationalityEdit;
   QComboBox *roleCombo;

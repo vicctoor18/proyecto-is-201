@@ -1,0 +1,42 @@
+REQUISITOS DE INSTALACIÓN Y COMPILACIÓN
+=======================================
+
+Este proyecto es una aplicación de escritorio desarrollada en C++ utilizando el framework Qt5.
+
+REQUISITOS DEL SISTEMA
+----------------------
+1.  **Compilador C++**: Compatible con el estándar C++17 (ej. GCC, Clang).
+2.  **CMake**: Versión 3.10 o superior.
+3.  **Qt5 Framework**: Se requieren los módulos `Widgets` y `Sql`.
+4.  **SQLite3**: Driver para la base de datos (generalmente incluido con Qt Sql).
+
+INSTALACIÓN DE DEPENDENCIAS (Linux - Ubuntu/Debian)
+---------------------------------------------------
+Para instalar las herramientas necesarias, ejecuta el siguiente comando en la terminal:
+
+    sudo apt update
+    sudo apt install build-essential cmake qtbase5-dev qt5-qmake libqt5sql5-sqlite
+
+INSTRUCCIONES DE COMPILACIÓN
+----------------------------
+Sigue estos pasos para compilar el proyecto desde la raíz del directorio:
+
+1.  Crear un directorio de construcción:
+    mkdir build
+    cd build
+
+2.  Generar los archivos de construcción con CMake:
+    cmake ..
+
+3.  Compilar el proyecto:
+    make
+
+EJECUCIÓN
+---------
+Una vez compilado, el ejecutable se encontrará en la carpeta `build`. Para ejecutarlo:
+
+    ./SistemaTutorizacion
+
+NOTAS ADICIONALES
+-----------------
+- Asegúrate de que la base de datos `sistema_tutorizacion.db` se cree correctamente o esté accesible. El programa gestiona su creación automáticamente en la carpeta `data` si no existe.

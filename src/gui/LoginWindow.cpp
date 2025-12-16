@@ -7,28 +7,28 @@
 
 LoginWindow::LoginWindow(QWidget *parent) : QWidget(parent) {
   setWindowTitle("Sistema Tutorizacion UCO - Login");
-  resize(400, 300); // Increased size
+  resize(400, 300); // Tamaño de la ventana
 
-  QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->setSpacing(10);
-  layout->setContentsMargins(20, 20, 20, 20);
+  QVBoxLayout *layout = new QVBoxLayout(this); // Layout vertical
+  layout->setSpacing(10);                      // Espacio entre widgets
+  layout->setContentsMargins(20, 20, 20, 20);  // Margen de la ventana
 
-  layout->addWidget(new QLabel("Usuario:"));
-  usernameEdit = new QLineEdit(this);
+  layout->addWidget(new QLabel("Usuario:")); // Etiqueta de usuario
+  usernameEdit = new QLineEdit(this);        // Editor nombre usuario
   layout->addWidget(usernameEdit);
 
-  layout->addWidget(new QLabel("Contrasena:"));
-  passwordEdit = new QLineEdit(this);
-  passwordEdit->setEchoMode(QLineEdit::Password);
+  layout->addWidget(new QLabel("Contrasena:"));   // Etiqueta de contrasena
+  passwordEdit = new QLineEdit(this);             // Editor contrasena
+  passwordEdit->setEchoMode(QLineEdit::Password); // Oculta la contrasena
   layout->addWidget(passwordEdit);
 
-  loginButton = new QPushButton("Iniciar Sesion", this);
+  loginButton = new QPushButton("Iniciar Sesion", this); // Boton iniciar sesion
   layout->addWidget(loginButton);
 
-  registerButton = new QPushButton("Registrarse", this);
+  registerButton = new QPushButton("Registrarse", this); // Boton registrarse
   layout->addWidget(registerButton);
 
-  statusLabel = new QLabel(this);
+  statusLabel = new QLabel(this); // Etiqueta de estado
   statusLabel->setStyleSheet("color: red");
   layout->addWidget(statusLabel);
 
@@ -40,7 +40,7 @@ LoginWindow::LoginWindow(QWidget *parent) : QWidget(parent) {
 
 void LoginWindow::onRegisterClicked() {
   RegisterWindow *registerWindow = new RegisterWindow();
-  registerWindow->show();
+  registerWindow->show(); // Muestra la ventana de registro
 }
 
 void LoginWindow::onLoginClicked() {
@@ -52,11 +52,11 @@ void LoginWindow::onLoginClicked() {
   if (DatabaseManager::instance().login(username, password, role, userId)) {
     if (role == "alumno") {
       StudentWindow *studentWindow = new StudentWindow(userId);
-      studentWindow->show();
+      studentWindow->show(); // Muestra la ventana de estudiante
       this->close();
     } else if (role == "tutor") {
       TutorWindow *tutorWindow = new TutorWindow(userId);
-      tutorWindow->show();
+      tutorWindow->show(); // Muestra la ventana de tutor
       this->close();
     }
   } else {

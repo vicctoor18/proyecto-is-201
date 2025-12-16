@@ -11,21 +11,28 @@
 
 class DatabaseManager {
 private:
-  DatabaseManager(); // Constructor privado. Se accede a traves del metodo instance()
+  DatabaseManager(); // Constructor privado. Se accede a traves del metodo
+                     // instance()
   QSqlDatabase db;   // Conexión entre la base de datos y el programa
 public:
   static DatabaseManager &
-  instance(); // Devuelve la instancia de la base de datos, para poder usarse en varias ventanas
+  instance(); // Devuelve la instancia de la base de datos, para poder usarse en
+              // varias ventanas
   bool connect(); // Conecta la base de datos. Si ya lo esta, devuelve true.
-  void initDB();  // Inicializa la base de datos. Asigna una base de datos default si esta vacía (nueva base de datos)
+  void initDB();  // Inicializa la base de datos. Asigna una base de datos
+                  // default si esta vacía (nueva base de datos)
 
   // Creación y login del usuario
-  bool login(const QString &username, const QString &password, QString &role, int &userId);
-  bool registerUser(const QString &username, const QString &password, const QString &role, const QString &name, const QString &degree, const QString &nationality);
+  bool login(const QString &username, const QString &password, QString &role,
+             int &userId);
+  bool registerUser(const QString &username, const QString &password,
+                    const QString &role, const QString &name,
+                    const QString &degree, const QString &nationality);
 
   // Asignación del tutor
   int getAssignedTutor(int studentId);
-  bool assignTutor(int studentId, const QString &degree, const QString &nationality);
+  bool assignTutor(int studentId, const QString &degree,
+                   const QString &nationality);
 
   // Chat
   bool sendMessage(int senderId, int receiverId, const QString &content);
@@ -36,6 +43,40 @@ public:
     QString timestamp;
   };
   std::vector<Message> getMessages(int userId1, int userId2);
+
+  // Alertas
+  struct Alert {
+    int id;
+    int senderId;
+    QString senderName; // Helper para mostrar el nombre directamente
+    QString content;
+    QString timestamp;
+    bool isRead;
+  };
+  bool sendAlert(int senderId, int receiverId, const QString &content);
+  std::vector<Alert> getAlerts(int studentId);
+  bool markAlertAsRead(int alertId);
+
+  // Tutorias (Citas)
+  struct Appointment {
+    int id;
+    int studentId;
+    int tutorId;
+    QString studentName; // Helper
+    QString date;
+    QString time;
+    QString reason;
+    QString status; // SOLICITADA, PROGRAMADA, MODIFICADA, EN_CURSO, FINALIZADA,
+                    // CANCELADA
+    QString tutorNotes;
+  };
+  bool requestAppointment(int studentId, int tutorId, const QString &date,
+                          const QString &time, const QString &reason);
+  std::vector<Appointment> getAppointments(int userId, bool isTutor);
+  bool updateAppointment(int appointmentId, const QString &newDate,
+                         const QString &newTime, const QString &status,
+                         const QString &notes);
+  bool updateAppointmentStatus(int appointmentId, const QString &status);
 
   // Helpers
   struct UserInfo {
