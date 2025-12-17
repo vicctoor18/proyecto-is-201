@@ -32,10 +32,8 @@ LoginWindow::LoginWindow(QWidget *parent) : QWidget(parent) {
   statusLabel->setStyleSheet("color: red");
   layout->addWidget(statusLabel);
 
-  connect(loginButton, &QPushButton::clicked, this,
-          &LoginWindow::onLoginClicked);
-  connect(registerButton, &QPushButton::clicked, this,
-          &LoginWindow::onRegisterClicked);
+  connect(loginButton, &QPushButton::clicked, this, &LoginWindow::onLoginClicked);
+  connect(registerButton, &QPushButton::clicked, this, &LoginWindow::onRegisterClicked);
 }
 
 void LoginWindow::onRegisterClicked() {

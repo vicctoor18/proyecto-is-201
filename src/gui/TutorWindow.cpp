@@ -12,11 +12,11 @@ TutorWindow::TutorWindow(int tutorId, QWidget *parent)
 
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
-  // Tab Widget
+  // Pestaña principal
   tabWidget = new QTabWidget(this);
   mainLayout->addWidget(tabWidget);
 
-  // Setup Tabs
+  // Configurar pestañas
   setupChatTab();
   setupAlertsTab();
   setupAppointmentsTab();
@@ -25,18 +25,18 @@ TutorWindow::TutorWindow(int tutorId, QWidget *parent)
   tabWidget->addTab(alertsTab, "Alertas");
   tabWidget->addTab(appointmentsTab, "Tutorias");
 
-  // Logout Button (Global)
+  // Cerrar sesion (Global)
   logoutButton = new QPushButton("Cerrar Sesion", this);
   mainLayout->addWidget(logoutButton);
   connect(logoutButton, &QPushButton::clicked, this,
           &TutorWindow::onLogoutClicked);
 
-  // Load Data
+  // Cargar datos
   loadStudents();
   loadAlertStudents();
   loadAppointments();
 
-  // Auto-refresh chat every 2 seconds
+  // Refrescar chat y citas (cada 2 segundos)
   QTimer *timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &TutorWindow::refreshChat);
   connect(timer, &QTimer::timeout, this, &TutorWindow::refreshAppointments);
@@ -47,14 +47,14 @@ void TutorWindow::setupChatTab() {
   chatTab = new QWidget();
   QHBoxLayout *layout = new QHBoxLayout(chatTab);
 
-  // Left side: Student List
+  // Izquierda: Lista de Alumnos
   QVBoxLayout *leftLayout = new QVBoxLayout();
   leftLayout->addWidget(new QLabel("Mis Alumnos:"));
   studentList = new QListWidget(chatTab);
   leftLayout->addWidget(studentList);
   layout->addLayout(leftLayout, 1);
 
-  // Right side: Chat
+  // Derecha: Área de Chat
   QVBoxLayout *rightLayout = new QVBoxLayout();
   chatLabel = new QLabel("Seleccione un alumno para chatear", chatTab);
   rightLayout->addWidget(chatLabel);
@@ -72,8 +72,7 @@ void TutorWindow::setupChatTab() {
 
   layout->addLayout(rightLayout, 2);
 
-  connect(studentList, &QListWidget::itemClicked, this,
-          &TutorWindow::onStudentSelected);
+  connect(studentList, &QListWidget::itemClicked, this, &TutorWindow::onStudentSelected);
   connect(sendButton, &QPushButton::clicked, this, &TutorWindow::onSendMessage);
 }
 
@@ -81,7 +80,7 @@ void TutorWindow::setupAlertsTab() {
   alertsTab = new QWidget();
   QVBoxLayout *layout = new QVBoxLayout(alertsTab);
 
-  // Student Selection
+  // Selección de Alumnos
   QGroupBox *studentGroup = new QGroupBox("Seleccionar Destinatarios");
   QVBoxLayout *studentGroupLayout = new QVBoxLayout(studentGroup);
 
@@ -93,7 +92,7 @@ void TutorWindow::setupAlertsTab() {
 
   layout->addWidget(studentGroup);
 
-  // Message Input
+  // Entrada de Mensaje
   QGroupBox *messageGroup = new QGroupBox("Mensaje de Alerta");
   QVBoxLayout *messageGroupLayout = new QVBoxLayout(messageGroup);
 
@@ -105,31 +104,27 @@ void TutorWindow::setupAlertsTab() {
 
   layout->addWidget(messageGroup);
 
-  connect(selectAllCheckBox, &QCheckBox::stateChanged, this,
-          &TutorWindow::onSelectAllStudents);
-  connect(sendAlertButton, &QPushButton::clicked, this,
-          &TutorWindow::onSendAlert);
+  connect(selectAllCheckBox, &QCheckBox::stateChanged, this, &TutorWindow::onSelectAllStudents);
+  connect(sendAlertButton, &QPushButton::clicked, this, &TutorWindow::onSendAlert);
 }
 
 void TutorWindow::setupAppointmentsTab() {
   appointmentsTab = new QWidget();
   QHBoxLayout *layout = new QHBoxLayout(appointmentsTab);
 
-  // Left: List
+  // Izquierda: Lista de Solicitudes y Citas
   QVBoxLayout *leftLayout = new QVBoxLayout();
   leftLayout->addWidget(new QLabel("Solicitudes y Citas:", appointmentsTab));
   appointmentsTable = new QTableWidget(appointmentsTab);
   appointmentsTable->setColumnCount(4);
-  appointmentsTable->setHorizontalHeaderLabels(
-      {"Alumno", "Fecha", "Hora", "Estado"});
-  appointmentsTable->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::Stretch);
+  appointmentsTable->setHorizontalHeaderLabels({"Alumno", "Fecha", "Hora", "Estado"});
+  appointmentsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   appointmentsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
   appointmentsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
   leftLayout->addWidget(appointmentsTable);
   layout->addLayout(leftLayout, 1);
 
-  // Right: Details & Actions
+  // Derecha: Detalles y Acciones
   appointmentDetailsGroup = new QGroupBox("Detalles de la Cita");
   appointmentDetailsGroup->setEnabled(false);
   QFormLayout *formLayout = new QFormLayout(appointmentDetailsGroup);
@@ -172,19 +167,16 @@ void TutorWindow::setupAppointmentsTab() {
   connect(appModifyButton, &QPushButton::clicked, this,
           &TutorWindow::onModifyAppointment);
 
-  // Lambda connections for simple status changes
-  connect(appStartButton, &QPushButton::clicked,
-          [this]() { onChangeStatus("IN_PROGRESS"); });
-  connect(appFinishButton, &QPushButton::clicked,
-          [this]() { onChangeStatus("FINISHED"); });
+  // Conexiones lambda para cambios de estado simples
+  connect(appStartButton, &QPushButton::clicked, [this]() { onChangeStatus("IN_PROGRESS"); });
+  connect(appFinishButton, &QPushButton::clicked, [this]() { onChangeStatus("FINISHED"); });
 }
 
 void TutorWindow::loadStudents() {
   students = DatabaseManager::instance().getStudentsForTutor(tutorId);
   studentList->clear();
   for (const auto &student : students) {
-    QListWidgetItem *item = new QListWidgetItem(
-        student.name + " (" + student.degree + ")", studentList);
+    QListWidgetItem *item = new QListWidgetItem( student.name + " (" + student.degree + ")", studentList);
     item->setData(Qt::UserRole, student.id);
   }
 }
@@ -192,8 +184,7 @@ void TutorWindow::loadStudents() {
 void TutorWindow::loadAlertStudents() {
   alertStudentList->clear();
   for (const auto &student : students) {
-    QListWidgetItem *item = new QListWidgetItem(
-        student.name + " (" + student.degree + ")", alertStudentList);
+    QListWidgetItem *item = new QListWidgetItem(student.name + " (" + student.degree + ")", alertStudentList);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(Qt::Unchecked);
     item->setData(Qt::UserRole, student.id);
@@ -231,7 +222,7 @@ void TutorWindow::loadAppointments() {
 
     appointmentsTable->setItem(i, 3, statusItem);
 
-    // Store ID in first item
+    // Guardar ID y otros datos en el primer item para recuperarlos luego
     appointmentsTable->item(i, 0)->setData(Qt::UserRole, app.id);
     appointmentsTable->item(i, 0)->setData(Qt::UserRole + 1, app.reason);
     appointmentsTable->item(i, 0)->setData(Qt::UserRole + 2, app.tutorNotes);
@@ -249,8 +240,7 @@ void TutorWindow::onAppointmentSelected(int row, int column) {
   QString notes =
       appointmentsTable->item(row, 0)->data(Qt::UserRole + 2).toString();
 
-  // Convert status text back to internal code for logic if needed, or just
-  // check the item text
+  // Obtener estado actual
   QString statusText = appointmentsTable->item(row, 3)->text();
   QString status;
   if (statusText == "SOLICITADA")
@@ -299,8 +289,7 @@ void TutorWindow::onAcceptAppointment() {
 
   if (appDateEdit->date() <= QDate::currentDate()) {
     QMessageBox::warning(
-        this, "Error",
-        "La fecha de la tutoria debe ser al menos con un dia de antelacion.");
+        this, "Error", "La fecha de la tutoria debe ser al menos con un dia de antelacion.");
     return;
   }
 
@@ -319,9 +308,7 @@ void TutorWindow::onModifyAppointment() {
     return;
 
   if (appDateEdit->date() <= QDate::currentDate()) {
-    QMessageBox::warning(
-        this, "Error",
-        "La fecha de la tutoria debe ser al menos con un dia de antelacion.");
+    QMessageBox::warning(this, "Error", "La fecha de la tutoria debe ser al menos con un dia de antelacion.");
     return;
   }
 
@@ -330,8 +317,7 @@ void TutorWindow::onModifyAppointment() {
       appTimeEdit->time().toString("HH:mm"), "MODIFIED",
       appTutorNotes->toPlainText());
 
-  QMessageBox::information(this, "Exito",
-                           "Tutoria modificada. El alumno sera notificado.");
+  QMessageBox::information(this, "Exito", "Tutoria modificada. El alumno sera notificado.");
   loadAppointments();
   appointmentDetailsGroup->setEnabled(false);
 }
@@ -349,7 +335,7 @@ void TutorWindow::onChangeStatus(const QString &newStatus) {
 }
 
 void TutorWindow::refreshAppointments() {
-  // Only refresh if not editing
+  // Solo refrescar si no se está editando una cita
   if (!appointmentDetailsGroup->isEnabled()) {
     loadAppointments();
   }
@@ -366,8 +352,7 @@ void TutorWindow::onSelectAllStudents(int state) {
 void TutorWindow::onSendAlert() {
   QString content = alertMessageInput->toPlainText();
   if (content.isEmpty()) {
-    QMessageBox::warning(this, "Error",
-                         "El mensaje de alerta no puede estar vacio.");
+    QMessageBox::warning(this, "Error", "El mensaje de alerta no puede estar vacio.");
     return;
   }
 
@@ -394,7 +379,7 @@ void TutorWindow::onSendAlert() {
   QMessageBox::information(
       this, "Exito", QString("Alerta enviada a %1 alumnos.").arg(successCount));
   alertMessageInput->clear();
-  // Reset selection
+  // Reiniciar selección
   selectAllCheckBox->setChecked(false);
   for (int i = 0; i < alertStudentList->count(); ++i) {
     alertStudentList->item(i)->setCheckState(Qt::Unchecked);
@@ -411,14 +396,12 @@ void TutorWindow::loadChat() {
   if (currentStudentId == -1)
     return;
 
-  auto messages =
-      DatabaseManager::instance().getMessages(tutorId, currentStudentId);
+  auto messages = DatabaseManager::instance().getMessages(tutorId, currentStudentId);
   QString html;
   for (const auto &msg : messages) {
     QString color = (msg.senderId == tutorId) ? "blue" : "green";
     QString sender = (msg.senderId == tutorId) ? "Yo" : "Alumno";
-    html += "<div style='color:" + color + "'><b>" + sender + ":</b> " +
-            msg.content + "</div>";
+    html += "<div style='color:" + color + "'><b>" + sender + ":</b> " + msg.content + "</div>";
   }
   chatDisplay->setHtml(html);
   chatDisplay->moveCursor(QTextCursor::End);
@@ -431,8 +414,7 @@ void TutorWindow::onSendMessage() {
   if (content.isEmpty() || currentStudentId == -1)
     return;
 
-  if (DatabaseManager::instance().sendMessage(tutorId, currentStudentId,
-                                              content)) {
+  if (DatabaseManager::instance().sendMessage(tutorId, currentStudentId, content)) {
     messageInput->clear();
     loadChat();
   }

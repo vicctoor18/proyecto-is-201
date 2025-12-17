@@ -34,3 +34,6 @@ target_link_libraries(SistemaTutorizacion Qt5::Widgets Qt5::Sql)
 target_include_directories(SistemaTutorizacion PRIVATE src)
 
 
+
+enable_testing()
+add_subdirectory(tests)

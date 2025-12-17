@@ -48,7 +48,7 @@ private:
 
   QTabWidget *tabWidget;
 
-  // Chat Tab Widgets
+  // Widgets para Chat
   QWidget *chatTab;
   QListWidget *studentList;
   QTextEdit *chatDisplay;
@@ -57,14 +57,14 @@ private:
   QPushButton *logoutButton;
   QLabel *chatLabel;
 
-  // Alerts Tab Widgets
+  // Widgets para Alertas
   QWidget *alertsTab;
   QListWidget *alertStudentList; // Lista con checkboxes
   QCheckBox *selectAllCheckBox;
   QTextEdit *alertMessageInput;
   QPushButton *sendAlertButton;
 
-  // Appointments Tab Widgets
+  // Widgets para Tutorías
   QWidget *appointmentsTab;
   QTableWidget *appointmentsTable;
   QGroupBox *appointmentDetailsGroup;

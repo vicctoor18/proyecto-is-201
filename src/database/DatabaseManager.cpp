@@ -30,12 +30,17 @@ bool DatabaseManager::connect() {
     return true;
 
   if (!db.open()) {
-    qDebug() << "Error: No se ha podido conectar la base de datos"
-             << db.lastError().text();
+    qDebug() << "Error: No se ha podido conectar la base de datos" << db.lastError().text();
     return false;
   }
   qDebug() << "Base de datos conectada correctamente";
   return true;
+}
+
+void DatabaseManager::close() {
+  if (db.isOpen()) {
+    db.close();
+  }
 }
 
 void DatabaseManager::initDB() {
@@ -102,8 +107,7 @@ void DatabaseManager::initDB() {
   query.exec("SELECT count(*) FROM users");
   if (query.next() && query.value(0).toInt() == 0) {
     // Tutores
-    registerUser("alberto", "1234", "tutor", "Alberto", "Informatica",
-                 "Espana");
+    registerUser("alberto", "1234", "tutor", "Alberto", "Informatica", "Espana");
     registerUser("roberto", "1234", "tutor", "Roberto", "Mecanica", "Cuba");
     registerUser("adela", "1234", "tutor", "Adela", "Electrica", "Espana");
     registerUser("manuela", "1234", "tutor", "Manuela", "Forestal", "Colombia");
@@ -121,16 +125,13 @@ void DatabaseManager::initDB() {
   // Asignación de tutor
   query.exec("SELECT id, degree, nationality FROM users WHERE role = 'alumno'");
   while (query.next()) {
-    assignTutor(query.value(0).toInt(), query.value(1).toString(),
-                query.value(2).toString());
+    assignTutor(query.value(0).toInt(), query.value(1).toString(), query.value(2).toString());
   }
 }
 
-bool DatabaseManager::login(const QString &username, const QString &password,
-                            QString &role, int &userId) {
+bool DatabaseManager::login(const QString &username, const QString &password, QString &role, int &userId) {
   QSqlQuery query;
-  query.prepare("SELECT id, role FROM users WHERE username = :username AND "
-                "password = :password");
+  query.prepare("SELECT id, role FROM users WHERE username = :username AND password = :password");
   query.bindValue(":username", username);
   query.bindValue(":password", password);
 
@@ -142,10 +143,7 @@ bool DatabaseManager::login(const QString &username, const QString &password,
   return false;
 }
 
-bool DatabaseManager::registerUser(const QString &username,
-                                   const QString &password, const QString &role,
-                                   const QString &name, const QString &degree,
-                                   const QString &nationality) {
+bool DatabaseManager::registerUser(const QString &username, const QString &password, const QString &role, const QString &name, const QString &degree, const QString &nationality) {
   // Verificar si el usuario ya existe
   QSqlQuery checkQuery;
   checkQuery.prepare("SELECT id FROM users WHERE username = :u");
@@ -156,8 +154,7 @@ bool DatabaseManager::registerUser(const QString &username,
   }
 
   QSqlQuery query;
-  query.prepare("INSERT INTO users (username, password, role, name, degree, "
-                "nationality) VALUES (:u, :p, :r, :n, :d, :nat)");
+  query.prepare("INSERT INTO users (username, password, role, name, degree, nationality) VALUES (:u, :p, :r, :n, :d, :nat)");
   query.bindValue(":u", username);
   query.bindValue(":p", password);
   query.bindValue(":r", role);
@@ -182,8 +179,7 @@ int DatabaseManager::getAssignedTutor(int studentId) {
   return -1;
 }
 
-bool DatabaseManager::assignTutor(int studentId, const QString &degree,
-                                  const QString &nationality) {
+bool DatabaseManager::assignTutor(int studentId, const QString &degree, const QString &nationality) {
   // Tutor es inmutable, no se puede cambiar.
   if (getAssignedTutor(studentId) != -1) {
     return false;
@@ -199,8 +195,7 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
 
   QSqlQuery query;
   // Buscar tutores que cumplan una o dos condiciones
-  query.prepare("SELECT id, degree, nationality FROM users WHERE role = "
-                "'tutor' AND (degree = :d OR nationality = :n)");
+  query.prepare("SELECT id, degree, nationality FROM users WHERE role ='tutor' AND (degree = :d OR nationality = :n)");
   query.bindValue(":d", degree);
   query.bindValue(":n", nationality);
 
@@ -211,8 +206,7 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
 
   // Si no hay coincidencias, buscar TODOS los tutores
   if (!query.next()) {
-    query.prepare(
-        "SELECT id, degree, nationality FROM users WHERE role = 'tutor'");
+    query.prepare("SELECT id, degree, nationality FROM users WHERE role = 'tutor'");
     if (!query.exec()) {
       qDebug() << "Error searching for all tutors:" << query.lastError().text();
       return false;
@@ -235,8 +229,7 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
 
     // Conseguir numero de alumnos de este tutor.
     QSqlQuery countQuery;
-    countQuery.prepare(
-        "SELECT COUNT(*) FROM tutor_student WHERE tutor_id = :tid");
+    countQuery.prepare("SELECT COUNT(*) FROM tutor_student WHERE tutor_id = :tid");
     countQuery.bindValue(":tid", id);
     int count = 0;
     if (countQuery.exec() && countQuery.next()) {
@@ -287,8 +280,7 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
 
   // Añadir enlace tutor-alumno.
   if (best) {
-    query.prepare(
-        "INSERT INTO tutor_student (tutor_id, student_id) VALUES (:tid, :sid)");
+    query.prepare("INSERT INTO tutor_student (tutor_id, student_id) VALUES (:tid, :sid)");
     query.bindValue(":tid", best->id);
     query.bindValue(":sid", studentId);
     if (query.exec()) {
@@ -300,11 +292,9 @@ bool DatabaseManager::assignTutor(int studentId, const QString &degree,
   return false;
 }
 
-bool DatabaseManager::sendMessage(int senderId, int receiverId,
-                                  const QString &content) {
+bool DatabaseManager::sendMessage(int senderId, int receiverId, const QString &content) {
   QSqlQuery query;
-  query.prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES "
-                "(:sid, :rid, :c)");
+  query.prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES (:sid, :rid, :c)");
   query.bindValue(":sid", senderId);
   query.bindValue(":rid", receiverId);
   query.bindValue(":c", content);
@@ -324,9 +314,7 @@ DatabaseManager::getMessages(int userId1, int userId2) {
 
   if (query.exec()) {
     while (query.next()) {
-      messages.push_back({query.value(0).toInt(), query.value(1).toInt(),
-                          query.value(2).toString(),
-                          query.value(3).toString()});
+      messages.push_back({query.value(0).toInt(), query.value(1).toInt(), query.value(2).toString(), query.value(3).toString()});
     }
   }
   return messages;
@@ -335,8 +323,7 @@ DatabaseManager::getMessages(int userId1, int userId2) {
 bool DatabaseManager::sendAlert(int senderId, int receiverId,
                                 const QString &content) {
   QSqlQuery query;
-  query.prepare("INSERT INTO alerts (sender_id, receiver_id, content) VALUES "
-                "(:sid, :rid, :c)");
+  query.prepare("INSERT INTO alerts (sender_id, receiver_id, content) VALUES (:sid, :rid, :c)");
   query.bindValue(":sid", senderId);
   query.bindValue(":rid", receiverId);
   query.bindValue(":c", content);
@@ -378,9 +365,7 @@ bool DatabaseManager::requestAppointment(
     int studentId, int tutorId, const QString &date, const QString &time,
     const QString &reason) { // Crea una tutoría
   QSqlQuery query;
-  query.prepare("INSERT INTO appointments (student_id, tutor_id, date, time, "
-                "reason, status) "
-                "VALUES (:sid, :tid, :d, :t, :r, 'REQUESTED')");
+  query.prepare("INSERT INTO appointments (student_id, tutor_id, date, time, reason, status) VALUES (:sid, :tid, :d, :t, :r, 'REQUESTED')");
   query.bindValue(":sid", studentId);
   query.bindValue(":tid", tutorId);
   query.bindValue(":d", date);
@@ -389,8 +374,7 @@ bool DatabaseManager::requestAppointment(
   return query.exec();
 }
 
-std::vector<DatabaseManager::Appointment> DatabaseManager::getAppointments(
-    int userId, bool isTutor) { // Devuelve el listado de tutorias
+std::vector<DatabaseManager::Appointment> DatabaseManager::getAppointments(int userId, bool isTutor) { // Devuelve el listado de tutorias
   std::vector<Appointment> appointments;
   QSqlQuery query;
 
@@ -421,13 +405,9 @@ std::vector<DatabaseManager::Appointment> DatabaseManager::getAppointments(
   return appointments;
 }
 
-bool DatabaseManager::updateAppointment(
-    int appointmentId, const QString &newDate, const QString &newTime,
-    const QString &status,
-    const QString &notes) { // Cambiar fecha y hora de la tutoria
+bool DatabaseManager::updateAppointment(int appointmentId, const QString &newDate, const QString &newTime, const QString &status, const QString &notes) { // Cambiar fecha y hora de la tutoria
   QSqlQuery query;
-  query.prepare("UPDATE appointments SET date = :d, time = :t, status = :s, "
-                "tutor_notes = :n WHERE id = :id");
+  query.prepare("UPDATE appointments SET date = :d, time = :t, status = :s, tutor_notes = :n WHERE id = :id");
   query.bindValue(":d", newDate);
   query.bindValue(":t", newTime);
   query.bindValue(":s", status);
@@ -436,9 +416,7 @@ bool DatabaseManager::updateAppointment(
   return query.exec();
 }
 
-bool DatabaseManager::updateAppointmentStatus(
-    int appointmentId,
-    const QString &status) { // Cambiar estado de la tutoria
+bool DatabaseManager::updateAppointmentStatus(int appointmentId, const QString &status) { // Cambiar estado de la tutoria
   QSqlQuery query;
   query.prepare("UPDATE appointments SET status = :s WHERE id = :id");
   query.bindValue(":s", status);
@@ -452,8 +430,7 @@ DatabaseManager::UserInfo DatabaseManager::getUserInfo(int userId) {
       "SELECT id, name, degree, nationality FROM users WHERE id = :id");
   query.bindValue(":id", userId);
   if (query.exec() && query.next()) {
-    return {query.value(0).toInt(), query.value(1).toString(),
-            query.value(2).toString(), query.value(3).toString()};
+    return {query.value(0).toInt(), query.value(1).toString(), query.value(2).toString(), query.value(3).toString()};
   }
   return {-1, "", "", ""};
 }
@@ -469,9 +446,7 @@ DatabaseManager::getStudentsForTutor(int tutorId) {
 
   if (query.exec()) {
     while (query.next()) {
-      students.push_back({query.value(0).toInt(), query.value(1).toString(),
-                          query.value(2).toString(),
-                          query.value(3).toString()});
+      students.push_back({query.value(0).toInt(), query.value(1).toString(), query.value(2).toString(), query.value(3).toString()});
     }
   }
   return students;
